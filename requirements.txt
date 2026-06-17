@@ -1,0 +1,9 @@
+pandas
+numpy
+scikit-learn
+statsmodels
+plotly
+pyodbc
+python-dotenv
+joblib
+pytest

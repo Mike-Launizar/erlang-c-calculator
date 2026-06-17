@@ -1,49 +1,45 @@
-# Erlang C Calculator VBA Module
+# Erlang C Calculator - Forecasting pipeline
 
-## Overview
-The Erlang C Calculator is a module designed to assist with call center operations, allowing users to calculate various performance metrics based on arrival rates, service rates, and the number of agents.
+This branch adds a forecasting pipeline combining Holt-Winters seasonal smoothing and a Random Forest regressor, blended via Bayesian inverse-variance weighting.
 
-## Features
-- **Arrival Rate Calculation**: Determine the rate at which calls are received.
-- **Service Rate Calculation**: Estimate the rate at which calls can be handled by agents.
-- **Agent Configuration**: Input the number of agents available for service.
-- **Performance Metrics Summation**: Calculate key statistics including average wait time, probability of wait, and service level.
-- **User-Friendly Interface**: Simple input forms for ease of use.
+Files added
+- src/forecast_pipeline.py — importable pipeline and CLI entrypoint
+- notebooks/forecast_workflow.ipynb — example notebook showing usage
+- requirements.txt — dependencies
+- .env.example — example environment variables
+- .gitignore — ignores for Python projects
+- tests/test_feature_engineer.py — small unit test
+- tests/test_blender.py — small unit test
 
-## Installation
-1. **Download the Module**: Clone or download the repository from GitHub.
-2. **Import the VBA Module**: Open Excel, press `ALT` + `F11` to open the VBA editor, and import the module using `File -> Import File`.
-3. **Enable Macros**: Ensure that macros are enabled in your Excel settings.
+Setup
+1. Create a virtual environment and install dependencies:
 
-## Usage Examples
-- **Basic Calculation**: 
-  ```vba
-  Dim result As Double
-  result = CalculateErlangC(arrivalRate, serviceRate, numberOfAgents)
-  MsgBox "Expected wait time: " & result
-  ```
-- **Agent Configuration**:
-  Setup the number of agents dynamically based on user input using a form.
+   python -m venv .venv
+   source .venv/bin/activate   # Linux/Mac
+   .venv\Scripts\activate    # Windows
+   pip install -r requirements.txt
 
-## Function Reference
-- **CalculateErlangC(arrivalRate As Double, serviceRate As Double, numberOfAgents As Integer) As Double**
-  - **Parameters**:
-    - `arrivalRate`: The rate of incoming calls.
-    - `serviceRate`: The rate of service provided by each agent.
-    - `numberOfAgents`: The total number of agents available.
-  - **Returns**: A double representing the expected wait time in seconds.
+2. Create a `.env` file (copy from `.env.example`) and update the values. Do NOT commit `.env` to the repository.
 
-## Assumptions
-- Calls arrive following a Poisson distribution.
-- Agents serve customers at a constant average rate.
-- The calculator is suitable for steady-state operations.
+3. Provide your SQL query file and set the SQL_PATH environment variable (or update `SQL_PATH` in the .env file). The SQL should return columns `Year`, `Month`, and `Volume` among any other columns.
 
-## Technical Notes
-- The module is designed to handle a range of operating scenarios. 
-- Optimization for larger call volumes may require fine-tuning of service rates.
+Run the pipeline
 
-## Author
-This module was developed by Mike-Launizar. Contributions and feedback are welcome! 
+- From Python:
 
-## License
-This project is licensed under the MIT License. See the LICENSE file for details.
+    from src.forecast_pipeline import DataLoader, VolumeForecastPipeline, build_conn_str_from_env
+    import os
+
+    conn = build_conn_str_from_env()
+    loader = DataLoader(conn, os.getenv('SQL_PATH', 'query.sql'))
+    df = loader.load()
+
+    pipeline = VolumeForecastPipeline(horizon=13)
+    forecast_df, weights = pipeline.run(df)
+
+    print(forecast_df)
+
+Security notes
+- Do not commit credentials or .env files. Use GitHub Secrets for CI and environment variables in deployed environments.
+- Large model artifacts are not committed to this repo. Use Git LFS or external object storage if you need to store pickled models.
+

@@ -1,0 +1,24 @@
+# Byte-compiled / environment
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Mac
+.DS_Store
+
+# Python test and coverage
+.coverage
+htmlcov/
+
+# Local config
+.env
+
+# Model artifacts
+models/*.pkl
